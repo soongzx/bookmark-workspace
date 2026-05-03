@@ -1,0 +1,39 @@
+name: Build & Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Read version from manifest.json
+        id: version
+        run: |
+          VERSION=$(node -p "require('./manifest.json').version")
+          echo "VERSION=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Create release zip
+        run: |
+          # Exclude docs, .git, .github, and CI files
+          zip -r "bookmark-workspace-v${{ steps.version.outputs.VERSION }}.zip" . \
+            -x ".git/*" \
+            -x ".github/*" \
+            -x "docs/*" \
+            -x "AGENTS.md" \
+            -x "LICENSE"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: "bookmark-workspace-v${{ steps.version.outputs.VERSION }}.zip"
+          name: "v${{ steps.version.outputs.VERSION }}"
+          tag_name: "v${{ steps.version.outputs.VERSION }}"
+          generate_release_notes: true
