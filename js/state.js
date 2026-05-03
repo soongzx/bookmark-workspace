@@ -1,13 +1,3 @@
-// ========== 版本号设置（动态读取 manifest） ==========
-(function setVersion() {
-    try {
-        const manifest = chrome.runtime.getManifest();
-        document.getElementById('appVersion').textContent = 'v' + manifest.version;
-    } catch (e) {
-            document.getElementById('appVersion').textContent = 'v2.6';
-    }
-})();
-
 // ========== 全局状态变量 ==========
 var bookmarkTreeRoot, bookmarksBarNode, workspaceFolders = [];
 var isSearchMode = false, allBookmarksFlat = [];

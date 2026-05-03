@@ -272,6 +272,11 @@ function bindEvents() {
 // ========== 主初始化 ==========
 async function init() {
     initDOM();
+    // 版本号从 manifest.json 动态获取
+    try {
+        const manifest = chrome.runtime.getManifest();
+        document.getElementById('appVersion').textContent = 'v' + manifest.version;
+    } catch (e) {}
     initUI();           // 初始化提示元素等 UI 组件
     initTheme();
     initScales();
