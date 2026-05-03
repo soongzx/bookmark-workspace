@@ -4,7 +4,7 @@
         const manifest = chrome.runtime.getManifest();
         document.getElementById('appVersion').textContent = 'v' + manifest.version;
     } catch (e) {
-        document.getElementById('appVersion').textContent = 'v2.2';
+            document.getElementById('appVersion').textContent = 'v2.5';
     }
 })();
 
