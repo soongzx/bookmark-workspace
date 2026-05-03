@@ -1,7 +1,7 @@
 {
     "manifest_version": 3,
     "name": "Bookmark Workspace Manager",
-    "version": "2.2",
+    "version": "2.3",
     "description": "以workspace方式管理书签，支持多列树状展示、多主题、双面板对比与状态记忆",
     "permissions": ["bookmarks", "storage"],
     "background": {
