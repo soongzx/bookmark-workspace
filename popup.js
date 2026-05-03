@@ -1,7 +1,6 @@
 (function () {
     'use strict';
 
-    // ========== DOM 元素 ==========
     const searchInput = document.getElementById('searchInput');
     const searchClear = document.getElementById('searchClear');
     const filterArea = document.getElementById('filterArea');
@@ -15,17 +14,20 @@
     const panelBody2 = document.getElementById('panelBody2');
     const panel1Title = document.getElementById('panel1Title');
     const panel2Title = document.getElementById('panel2Title');
+    const clearPanel1Btn = document.getElementById('clearPanel1Btn');
+    const clearPanel2Btn = document.getElementById('clearPanel2Btn');
+    const toolbar = document.getElementById('toolbar');
+    const dragHint = toolbar.querySelector('.drag-hint');
+    const clearCacheBtn = document.getElementById('clearCacheBtn');
 
-    // ========== 状态变量 ==========
     let bookmarkTreeRoot, bookmarksBarNode, workspaceFolders = [];
     let isSearchMode = false, allBookmarksFlat = [];
-    let dualMode = false;                     // 默认单面板
+    let dualMode = false;
     let panel1Path = [], panel2Path = [];
     let activePanelId = 'panel1';
     const panelScales = { panel1: 1, panel2: 1 };
     const MIN_SCALE = 0.6, MAX_SCALE = 1.8, STEP = 0.1;
 
-    // ========== 工具函数 ==========
     function escapeHTML(s) { const d=document.createElement('div'); d.textContent=s||''; return d.innerHTML; }
     function countAllDescendants(node) {
         if (!node) return 0;
@@ -39,8 +41,6 @@
         toastEl.classList.add('show');
         window._toastTimer = setTimeout(() => toastEl.classList.remove('show'), 1600);
     }
-
-    // ★ 边框颜色：读取 body 上的主题变量（--level-color 定义在 body 上）
     function getLevelBorderStyle(level) {
         const style = getComputedStyle(document.body);
         const raw = style.getPropertyValue('--level-color').trim();
@@ -51,7 +51,6 @@
         return `${width}px solid rgba(${parts[0]},${parts[1]},${parts[2]},${alpha})`;
     }
 
-    // ========== 书签栏识别 ==========
     function findBookmarksBar(root) {
         if (!root?.children) return null;
         const byId = root.children.find(c => c.id === '1');
@@ -77,19 +76,33 @@
         if (node.children) node.children.forEach(c => flattenBookmarks(c, cur, result));
     }
 
-    // ========== 面板激活 ==========
     function setActivePanel(panelId) {
         activePanelId = panelId;
         panel1El.classList.toggle('panel-active', panelId === 'panel1');
         panel2El.classList.toggle('panel-active', panelId === 'panel2');
-        saveState();
     }
     panel1El.addEventListener('mouseenter', () => setActivePanel('panel1'));
     panel1El.addEventListener('click', () => setActivePanel('panel1'));
     panel2El.addEventListener('mouseenter', () => setActivePanel('panel2'));
     panel2El.addEventListener('click', () => setActivePanel('panel2'));
 
-    // ========== 面板渲染 ==========
+    // 清空面板
+    function clearPanel(panelId) {
+        if (panelId === 'panel1') {
+            panel1Path = [];
+            panelBody1.innerHTML = '<div class="empty-state"><span>📭 暂无内容</span></div>';
+            panel1Title.textContent = '📂 工作区 1';
+        } else {
+            panel2Path = [];
+            panelBody2.innerHTML = '<div class="empty-state"><span>📭 暂无内容</span></div>';
+            panel2Title.textContent = '📂 工作区 2';
+        }
+        saveState();
+        showToast('面板已清空');
+    }
+    clearPanel1Btn.addEventListener('click', () => clearPanel('panel1'));
+    clearPanel2Btn.addEventListener('click', () => clearPanel('panel2'));
+
     function renderPanel(bodyEl, pathArray, titleEl, titleName) {
         bodyEl.innerHTML = '';
         if (!pathArray || !pathArray.length) {
@@ -110,14 +123,11 @@
     function createColumn(colData, colIndex, currentBodyEl) {
         const div = document.createElement('div');
         div.className = 'column';
-        // ★ 不再在列上设置 --panel-scale，由面板 body 统一控制
         div.style.borderLeft = getLevelBorderStyle(colIndex);
-
         const header = document.createElement('div');
         header.className = 'column-header';
         header.textContent = colData.title;
         div.appendChild(header);
-
         const body = document.createElement('div');
         body.className = 'column-body';
         const children = colData.children || [];
@@ -211,7 +221,6 @@
         saveState();
     }
 
-    // ========== 筛选按钮 ==========
     function renderFilterButtons() {
         filterArea.innerHTML = '';
         if (!workspaceFolders.length) {
@@ -247,12 +256,13 @@
         return btn;
     }
 
-    // ========== 搜索 ==========
     function performSearch(query) {
         if (!query || !query.trim()) { exitSearchMode(); return; }
         isSearchMode = true;
-        panel2El.style.display = 'none';
-        panelDivider.style.display = 'none';
+        if (dualMode) {
+            panel2El.style.display = 'none';
+            panelDivider.style.display = 'none';
+        }
         const q = query.trim().toLowerCase();
         const results = allBookmarksFlat.filter(item =>
             item.title.toLowerCase().includes(q) || item.url.toLowerCase().includes(q) || item.pathStr.toLowerCase().includes(q)
@@ -282,8 +292,11 @@
         searchInput.value = '';
         searchClear.classList.remove('visible');
         document.documentElement.style.setProperty('--panel-wrap', dualMode ? 'nowrap' : 'wrap');
-        if (!panel1Path.length) loadWorkspaceIntoPanel('__all__', panelBody1, 'panel1Path', panel1Title, '全部工作区');
-        else renderPanel(panelBody1, panel1Path, panel1Title, panel1Path[0]?.title || '');
+        if (!panel1Path.length) {
+            panelBody1.innerHTML = '<div class="empty-state"><span>📭 暂无内容</span></div>';
+        } else {
+            renderPanel(panelBody1, panel1Path, panel1Title, panel1Path[0]?.title || '');
+        }
         if (dualMode) {
             panel2El.style.display = 'flex';
             panelDivider.style.display = 'block';
@@ -295,12 +308,10 @@
         return text.replace(new RegExp(`(${esc})`, 'gi'), '<mark>$1</mark>');
     }
 
-    // ========== 主题 ==========
     function applyTheme(theme) {
         document.body.setAttribute('data-theme', theme);
         localStorage.setItem('workspace_theme', theme);
         document.querySelectorAll('.theme-dot').forEach(d => d.classList.toggle('active', d.dataset.theme === theme));
-        // 重新渲染以同步边框颜色
         if (panel1Path.length) renderPanel(panelBody1, panel1Path, panel1Title, panel1Path[0]?.title || '');
         if (dualMode && panel2Path.length) renderPanel(panelBody2, panel2Path, panel2Title, panel2Path[0]?.title || '');
     }
@@ -315,7 +326,6 @@
         if (dot) applyTheme(dot.dataset.theme);
     });
 
-    // ========== 缩放（修复） ==========
     function setPanelScale(panelId, scale) {
         panelScales[panelId] = Math.min(MAX_SCALE, Math.max(MIN_SCALE, scale));
         const bodyEl = panelId === 'panel1' ? panelBody1 : panelBody2;
@@ -340,7 +350,13 @@
         });
     });
 
-    // ========== 双面板切换 ==========
+    toolbar.addEventListener('mouseenter', () => { dragHint.style.display = 'block'; });
+    toolbar.addEventListener('mousemove', (e) => {
+        dragHint.style.left = (e.clientX + 12) + 'px';
+        dragHint.style.top = (e.clientY + 12) + 'px';
+    });
+    toolbar.addEventListener('mouseleave', () => { dragHint.style.display = 'none'; });
+
     toggleDualBtn.addEventListener('click', () => {
         dualMode = !dualMode;
         panel2El.style.display = dualMode ? 'flex' : 'none';
@@ -350,14 +366,9 @@
         if (dualMode) {
             panel1El.style.flex = '2';
             panel2El.style.flex = '1';
+            // 如果面板2为空，打开时默认显示空
             if (!panel2Path.length) {
-                const allChildren = workspaceFolders.map(f => ({ ...f }));
-                panel2Path = [{ id: '__all_root__', title: '全部工作区', children: allChildren, _isVirtual: true }];
-                if (allChildren.length > 1) {
-                    const second = allChildren[1];
-                    panel2Path.push({ id: second.id, title: second.title, children: second.children || [] });
-                }
-                renderPanel(panelBody2, panel2Path, panel2Title, '全部工作区');
+                panelBody2.innerHTML = '<div class="empty-state"><span>📭 暂无内容</span></div>';
             }
         } else {
             panel1El.style.flex = '1';
@@ -366,7 +377,6 @@
         saveState();
     });
 
-    // ========== 分隔条拖动 ==========
     let isResizing = false;
     panelDivider.addEventListener('mousedown', (e) => { isResizing = true; e.preventDefault(); });
     window.addEventListener('mousemove', (e) => {
@@ -383,31 +393,7 @@
     });
     window.addEventListener('mouseup', () => { isResizing = false; });
 
-    // ========== 默认加载 ==========
-    function initDefaults() {
-        if (!workspaceFolders.length) return;
-        const allChildren = workspaceFolders.map(f => ({ ...f }));
-        panel1Path = [{ id: '__all_root__', title: '全部工作区', children: allChildren, _isVirtual: true }];
-        if (allChildren.length > 0) {
-            const firstWs = allChildren[0];
-            panel1Path.push({ id: firstWs.id, title: firstWs.title, children: firstWs.children || [] });
-            const firstFolder = (firstWs.children || []).find(c => !c.url && c.children);
-            if (firstFolder) {
-                panel1Path.push({ id: firstFolder.id, title: firstFolder.title, children: firstFolder.children || [] });
-            }
-        }
-        renderPanel(panelBody1, panel1Path, panel1Title, '全部工作区');
-        panel2Path = [];
-        panelBody2.innerHTML = '';
-        const firstWsBtn = document.querySelector(`.filter-btn[data-workspace-id="${workspaceFolders[0]?.id}"]`);
-        if (firstWsBtn) firstWsBtn.classList.add('active');
-        saveState();
-    }
-
-    // ========== 状态持久化 ==========
     function saveState() {
-        localStorage.setItem('workspace_dualMode', dualMode);
-        localStorage.setItem('workspace_activePanel', activePanelId);
         localStorage.setItem('workspace_panel1Path', JSON.stringify(panel1Path));
         localStorage.setItem('workspace_panel2Path', JSON.stringify(panel2Path));
         localStorage.setItem('workspace_panel1Scale', panelScales.panel1);
@@ -415,30 +401,58 @@
     }
 
     function restoreState() {
-        const savedDual = localStorage.getItem('workspace_dualMode');
-        if (savedDual !== null) dualMode = (savedDual === 'true');
         const savedActive = localStorage.getItem('workspace_activePanel');
         if (savedActive) activePanelId = savedActive;
         const savedPath1 = localStorage.getItem('workspace_panel1Path');
         if (savedPath1) try { panel1Path = JSON.parse(savedPath1); } catch (e) { }
         const savedPath2 = localStorage.getItem('workspace_panel2Path');
         if (savedPath2) try { panel2Path = JSON.parse(savedPath2); } catch (e) { }
-
-        toggleDualBtn.classList.toggle('active', dualMode);
-        panel2El.style.display = dualMode ? 'flex' : 'none';
-        panelDivider.style.display = dualMode ? 'block' : 'none';
-        document.documentElement.style.setProperty('--panel-wrap', dualMode ? 'nowrap' : 'wrap');
-        if (dualMode) {
-            panel1El.style.flex = '2'; panel2El.style.flex = '1';
-        } else {
-            panel1El.style.flex = '1';
-        }
+        
+        dualMode = false;
+        toggleDualBtn.classList.remove('active');
+        panel2El.style.display = 'none';
+        panelDivider.style.display = 'none';
+        document.documentElement.style.setProperty('--panel-wrap', 'wrap');
+        panel1El.style.flex = '1';
         setActivePanel(activePanelId);
-        if (panel1Path.length) renderPanel(panelBody1, panel1Path, panel1Title, panel1Path[0]?.title || '');
-        if (dualMode && panel2Path.length) renderPanel(panelBody2, panel2Path, panel2Title, panel2Path[0]?.title || '');
+        
+        if (panel1Path.length) {
+            renderPanel(panelBody1, panel1Path, panel1Title, panel1Path[0]?.title || '');
+        } else {
+            panelBody1.innerHTML = '<div class="empty-state"><span>📭 暂无内容</span></div>';
+        }
+        panelBody2.innerHTML = '';
     }
 
-    // ========== 拖放 ==========
+    function clearAllCache() {
+        localStorage.removeItem('workspace_theme');
+        localStorage.removeItem('workspace_dualMode');
+        localStorage.removeItem('workspace_activePanel');
+        localStorage.removeItem('workspace_panel1Path');
+        localStorage.removeItem('workspace_panel2Path');
+        localStorage.removeItem('workspace_panel1Scale');
+        localStorage.removeItem('workspace_panel2Scale');
+        
+        applyTheme('dark-gold');
+        setPanelScale('panel1', 1);
+        setPanelScale('panel2', 1);
+        dualMode = false;
+        activePanelId = 'panel1';
+        panel2El.style.display = 'none';
+        panelDivider.style.display = 'none';
+        panel1El.style.flex = '1';
+        toggleDualBtn.classList.remove('active');
+        panel1Path = [];
+        panel2Path = [];
+        panelBody1.innerHTML = '<div class="empty-state"><span>📭 暂无内容</span></div>';
+        panelBody2.innerHTML = '';
+        panel1Title.textContent = '📂 工作区 1';
+        panel2Title.textContent = '📂 工作区 2';
+        showToast('缓存已清除');
+    }
+
+    clearCacheBtn.addEventListener('click', clearAllCache);
+
     function setupDropTargets() {
         [panelBody1, panelBody2].forEach(body => {
             body.addEventListener('dragover', (e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; body.classList.add('drag-over'); });
@@ -459,7 +473,6 @@
         });
     }
 
-    // ========== 事件绑定 ==========
     function bindEvents() {
         let debounce;
         searchInput.addEventListener('input', () => {
@@ -481,19 +494,19 @@
         });
     }
 
-    // ========== 初始化 ==========
     async function init() {
         initTheme();
         initScales();
-        // 默认单面板
         panel2El.style.display = 'none';
         panelDivider.style.display = 'none';
         panel1El.style.flex = '1';
         document.documentElement.style.setProperty('--panel-wrap', 'wrap');
         setActivePanel('panel1');
 
+        panelBody1.innerHTML = '<div class="empty-state"><span>⏳ 加载书签中...</span></div>';
+        panelBody2.innerHTML = '';
+
         try {
-            panelBody1.innerHTML = '<div class="empty-state"><span>⏳ 加载书签中...</span></div>';
             const tree = await chrome.bookmarks.getTree();
             bookmarkTreeRoot = tree[0];
             bookmarksBarNode = findBookmarksBar(bookmarkTreeRoot);
@@ -511,7 +524,8 @@
             if (hasSaved) {
                 restoreState();
             } else {
-                initDefaults();
+                // 默认无内容，只显示空状态
+                panelBody1.innerHTML = '<div class="empty-state"><span>📭 暂无内容</span></div>';
             }
             bindEvents();
         } catch (e) {

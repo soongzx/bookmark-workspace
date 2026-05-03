@@ -61,7 +61,7 @@
         .app-title { font-size:18px; font-weight:700; color:var(--text); }
         .app-version { font-size:11px; color:var(--text-secondary); margin-left:6px; font-weight:400; }
         .header-spacer { flex:1; }
-        .header-search { display:flex; align-items:center; gap:10px; }
+        .header-right { display:flex; align-items:center; gap:8px; }
         .search-wrapper { position:relative; display:flex; align-items:center; width:200px; }
         .search-icon { position:absolute; left:8px; width:16px; height:16px; pointer-events:none; color:var(--text-secondary); }
         .search-icon svg { width:14px; height:14px; stroke:currentColor; fill:none; stroke-width:2; }
@@ -92,15 +92,16 @@
         .theme-dot[data-theme="ocean-blue"]::after { background:#22D3EE; }
         .theme-dot[data-theme="warm-light"]::after { background:#B4783C; }
         .theme-dot.active { border-color:var(--accent); box-shadow:0 0 0 2px var(--accent-light); }
-        .dual-toggle-btn {
+        .header-buttons { display:flex; gap:6px; margin-left:8px; }
+        .header-btn {
             width:30px; height:30px; border-radius:8px;
             border:1.5px solid var(--border); background:var(--btn-bg);
             color:var(--text); cursor:pointer; font-size:16px;
             display:flex; align-items:center; justify-content:center;
-            transition:all 0.2s; margin-left:8px;
+            transition:all 0.2s;
         }
-        .dual-toggle-btn:hover { background:var(--btn-hover-bg); }
-        .dual-toggle-btn.active { background:var(--accent); color:#fff; border-color:var(--accent); }
+        .header-btn:hover { background:var(--btn-hover-bg); }
+        .header-btn.active { background:var(--accent); color:#fff; border-color:var(--accent); }
         .toolbar {
             flex-shrink:0; margin:12px 20px 0 20px;
             background: var(--toolbar-bg); border:1px solid var(--border);
@@ -124,18 +125,18 @@
             font-size:11px; border-radius:10px; padding:1px 6px; margin-left:4px;
         }
         .drag-hint {
-            display:none;
-            position:fixed;
+            display: none;
+            position: fixed;
             background: var(--card-bg);
-            border:1px solid var(--border);
-            padding:4px 10px;
-            border-radius:4px;
-            font-size:11px;
-            color:var(--text-secondary);
-            white-space:nowrap;
-            z-index:200;
-            pointer-events:none;
-            box-shadow:var(--shadow-sm);
+            border: 1px solid var(--border);
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 11px;
+            color: var(--text-secondary);
+            white-space: nowrap;
+            z-index: 200;
+            pointer-events: none;
+            box-shadow: var(--shadow-sm);
         }
         .display-panels-container {
             flex:1 0 auto; display:flex; gap:1px; margin:16px 20px 20px 20px;
@@ -157,7 +158,24 @@
             color:var(--text-secondary); background:var(--toolbar-bg);
             cursor:pointer;
         }
-        .panel-controls { display:flex; align-items:center; gap:4px; }
+        .panel-controls { display:flex; align-items:center; gap:6px; }
+        .clear-panel-text-btn {
+            height: 22px;
+            padding: 0 8px;
+            border-radius: 4px;
+            border: none;
+            background: var(--btn-bg);
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: 500;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        .clear-panel-text-btn:hover {
+            background: var(--btn-hover-bg);
+            color: var(--accent);
+        }
         .scale-group {
             display:flex; align-items:center; gap:2px;
             background:var(--btn-bg); border-radius:6px; padding:2px;
@@ -242,11 +260,10 @@
     </style>
 </head>
 <body data-theme="dark-gold">
-    <!-- 标题栏 -->
     <header class="app-header">
         <div class="app-title">Bookmark Workspace <span class="app-version">v2.2</span></div>
         <div class="header-spacer"></div>
-        <div class="header-search">
+        <div class="header-right">
             <div class="search-wrapper">
                 <span class="search-icon">
                     <svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><line x1="15.5" y1="15.5" x2="20.5" y2="20.5"/></svg>
@@ -260,22 +277,24 @@
                 <button class="theme-dot" data-theme="ocean-blue" title="深海蓝夜"></button>
                 <button class="theme-dot" data-theme="warm-light" title="暖阳浅金"></button>
             </div>
-            <button class="dual-toggle-btn" id="toggleDualBtn" title="切换双面板">⿰</button>
+            <div class="header-buttons">
+                <button class="header-btn" id="clearCacheBtn" title="清除所有缓存">🗑️</button>
+                <button class="header-btn" id="toggleDualBtn" title="切换双面板">⿰</button>
+            </div>
         </div>
     </header>
 
-    <!-- 工具栏 -->
     <div class="toolbar" id="toolbar">
         <div class="drag-hint">💡 拖拽按钮到展示区即可加载内容</div>
         <div class="filter-area" id="filterArea"></div>
     </div>
 
-    <!-- 展示区容器 -->
     <div class="display-panels-container" id="panelsContainer">
         <div class="display-panel panel-active" id="panel1" style="flex:2;">
             <div class="panel-header">
                 <span id="panel1Title">📂 工作区 1</span>
                 <div class="panel-controls">
+                    <button class="clear-panel-text-btn" id="clearPanel1Btn" title="清空此面板内容">清空</button>
                     <div class="scale-group" data-panel="panel1">
                         <button class="scale-btn zoom-out">A-</button>
                         <span class="scale-value">100%</span>
@@ -290,6 +309,7 @@
             <div class="panel-header">
                 <span id="panel2Title">📂 工作区 2</span>
                 <div class="panel-controls">
+                    <button class="clear-panel-text-btn" id="clearPanel2Btn" title="清空此面板内容">清空</button>
                     <div class="scale-group" data-panel="panel2">
                         <button class="scale-btn zoom-out">A-</button>
                         <span class="scale-value">100%</span>
