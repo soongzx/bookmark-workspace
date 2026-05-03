@@ -12,7 +12,7 @@
 .theme-dot[data-theme="warm-light"]::after { background:#B4783C; }
 .theme-dot.active { border-color:var(--accent); box-shadow:0 0 0 2px var(--accent-light); }
 
-/* ========== 筛选按钮（移除阴影） ========== */
+/* ========== 筛选按钮 ========== */
 .filter-btn {
     flex-shrink:0; padding:6px 14px; border-radius:8px;
     border:1.5px solid transparent; background:var(--btn-bg);
@@ -21,12 +21,12 @@
     outline:none; cursor:grab;
 }
 .filter-btn:hover { background:var(--btn-hover-bg); border-color:var(--accent); }
-/* 选中状态：半透明背景 + 强调色边框 */
 .filter-btn.active {
     background: var(--accent-light);
     color: var(--text);
     border-color: var(--accent);
     font-weight: 600;
+    box-shadow: 0 0 10px var(--accent-glow);
 }
 .filter-btn.all-btn {
     background: var(--accent-light);
@@ -114,7 +114,11 @@
 }
 .item:hover { background:var(--btn-bg); }
 .item.folder-item { font-weight:500; }
-.item.expanded { background:var(--accent-light); border-left-color:var(--accent); }
+.item.expanded {
+    background:var(--accent-light);
+    border-left-color:var(--accent);
+    box-shadow: inset 0 0 12px var(--accent-glow), 0 0 8px var(--accent-glow);  /* ★ 新增光晕 */
+}
 .item-icon { flex-shrink:0; }
 .item-text { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; }
 .item-arrow { flex-shrink:0; color:var(--text-secondary); transition:transform 0.2s; }

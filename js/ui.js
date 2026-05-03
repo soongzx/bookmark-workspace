@@ -200,3 +200,27 @@ function setupDropTargets() {
         });
     });
 }
+
+// ========== 面板内拖拽提示元素 ==========
+function initUI() {
+    createDropHints();
+}
+
+function createDropHints() {
+    function addHint(panelId, titleId) {
+        const titleEl = document.getElementById(titleId);
+        if (!titleEl) return;
+        const hint = document.createElement('span');
+        hint.id = 'dropHint' + panelId.replace('panel','');
+        hint.className = 'drop-hint-panel';
+        hint.textContent = '💡 拖拽按钮到此处即可加载内容';
+        hint.style.display = 'none';
+        hint.style.fontSize = '11px';
+        hint.style.color = 'var(--text-secondary)';
+        hint.style.marginLeft = '8px';
+        hint.style.fontWeight = '400';
+        titleEl.parentNode.insertBefore(hint, titleEl.nextSibling);
+    }
+    addHint('panel1', 'panel1Title');
+    addHint('panel2', 'panel2Title');
+}

@@ -22,9 +22,13 @@
 
 body[data-theme="dark-crimson"] {
     --bg: #141414; --card-bg: #1C1C1C; --text: #FAFAFA; --text-secondary: #9CA3AF;
-    --accent: #DC2626; --accent-light: rgba(220, 38, 38, 0.12); --accent-glow: rgba(220, 38, 38, 0.15);
+    /* ★ 高亮效果改为半透明红色光晕 */
+    --accent: rgba(220, 38, 38, 0.85);
+    --accent-light: rgba(220, 38, 38, 0.18);
+    --accent-glow: rgba(220, 38, 38, 0.25);
     --btn-bg: #252525; --btn-hover-bg: #333; --border: #333; --toolbar-bg: rgba(20,20,20,0.85);
-    --level-color: 220, 38, 38; --toast-bg: #DC2626; --toast-text: #FAFAFA;
+    --level-color: 220, 38, 38;
+    --toast-bg: #DC2626; --toast-text: #FAFAFA;
 }
 
 body[data-theme="ocean-blue"] {

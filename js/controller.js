@@ -182,8 +182,23 @@ function clearAllCache() {
     showToast('缓存已清除');
 }
 
+// ========== 提示：在激活面板标题栏显示 ==========
+function showActivePanelHint() {
+    const hintId = 'dropHint' + (activePanelId === 'panel1' ? '1' : '2');
+    const hintEl = document.getElementById(hintId);
+    if (hintEl) hintEl.style.display = 'inline';
+}
+
+function hideActivePanelHint() {
+    const hint1 = document.getElementById('dropHint1');
+    const hint2 = document.getElementById('dropHint2');
+    if (hint1) hint1.style.display = 'none';
+    if (hint2) hint2.style.display = 'none';
+}
+
 // ========== 事件绑定与初始化 ==========
 function bindEvents() {
+    // 搜索框事件
     let debounce;
     searchInput.addEventListener('input', function() {
         const val = searchInput.value.trim();
@@ -231,13 +246,21 @@ function bindEvents() {
         });
     });
 
-    // 拖拽提示跟随鼠标
-    toolbar.addEventListener('mouseenter', function() { dragHint.style.display = 'block'; });
-    toolbar.addEventListener('mousemove', function(e) {
-        dragHint.style.left = (e.clientX + 12) + 'px';
-        dragHint.style.top = (e.clientY + 12) + 'px';
+    // ========== 拖拽提示：鼠标进入筛选区时，在激活面板标题栏显示提示 ==========
+    toolbar.addEventListener('mouseenter', function() {
+        showActivePanelHint();
     });
-    toolbar.addEventListener('mouseleave', function() { dragHint.style.display = 'none'; });
+    toolbar.addEventListener('mouseleave', function() {
+        hideActivePanelHint();
+    });
+
+    // 关于页面按钮
+    const aboutBtn = document.getElementById('aboutBtn');
+    if (aboutBtn) {
+        aboutBtn.addEventListener('click', function() {
+            chrome.tabs.create({ url: chrome.runtime.getURL('about.html') });
+        });
+    }
 
     // 清理缓存按钮
     clearCacheBtn.addEventListener('click', clearAllCache);
@@ -249,6 +272,7 @@ function bindEvents() {
 // ========== 主初始化 ==========
 async function init() {
     initDOM();
+    initUI();           // 初始化提示元素等 UI 组件
     initTheme();
     initScales();
     panel2El.style.display = 'none';
@@ -273,6 +297,9 @@ async function init() {
         flattenBookmarks(bookmarkTreeRoot, [], allBookmarksFlat);
         renderFilterButtons();
         setupDropTargets();
+
+        // 确保初始化后没有任何按钮处于高亮状态
+        document.querySelectorAll('.filter-btn').forEach(function(b) { b.classList.remove('active'); });
 
         const hasSaved = localStorage.getItem('workspace_panel1Path');
         if (hasSaved) {
