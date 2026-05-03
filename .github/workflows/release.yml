@@ -25,7 +25,7 @@ jobs:
       - name: Create release zip
         run: |
           # Exclude docs, .git, .github, and CI files
-          zip -r "bookmark-workspace-v${{ steps.version.outputs.VERSION }}.zip" . \
+          zip -r "bookmark-workspace-manager-v${{ steps.version.outputs.VERSION }}.zip" . \
             -x ".git/*" \
             -x ".github/*" \
             -x "docs/*" \
@@ -35,7 +35,7 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: "bookmark-workspace-v${{ steps.version.outputs.VERSION }}.zip"
+          files: "bookmark-workspace-manager-v${{ steps.version.outputs.VERSION }}.zip"
           name: "v${{ steps.version.outputs.VERSION }}"
           tag_name: "v${{ steps.version.outputs.VERSION }}"
           generate_release_notes: true
