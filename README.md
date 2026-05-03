@@ -1,4 +1,4 @@
-# 收藏夹工作区 <small>Bookmark Workspace Manager</small>
+# 收藏夹工作区管理系统 <small>Bookmark Workspace Manager</small>
 
 一个 Chrome 浏览器扩展，将你的书签栏顶层文件夹抽象为"工作区"，提供高效、可视化的多列树状浏览体验。
 
@@ -54,4 +54,4 @@
 
 ## 许可
 
-MIT License
+木兰宽松许可证, 第2版 (Mulan PSL v2)
