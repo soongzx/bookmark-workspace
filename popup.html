@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bookmark Workspace</title>
+    <style>
+        :root {
+            --panel-scale: 1;
+            --panel-wrap: wrap;
+            --bg: #0A0A0A;
+            --card-bg: #121212;
+            --text: #F5F5F5;
+            --text-secondary: #A0A0A0;
+            --accent: #D4AF37;
+            --accent-light: rgba(212, 175, 55, 0.15);
+            --btn-bg: #1A1A1A;
+            --btn-hover-bg: #252525;
+            --border: #2A2A2A;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.6);
+            --toolbar-bg: rgba(10,10,10,0.85);
+            --level-color: 212, 175, 55;
+            --toast-bg: #D4AF37;
+            --toast-text: #0A0A0A;
+            --divider-line: #2A2A2A;
+        }
+        body[data-theme="dark-crimson"] {
+            --bg: #141414; --card-bg: #1C1C1C; --text: #FAFAFA; --text-secondary: #9CA3AF;
+            --accent: #DC2626; --accent-light: rgba(220, 38, 38, 0.12); --btn-bg: #252525;
+            --btn-hover-bg: #333; --border: #333; --toolbar-bg: rgba(20,20,20,0.85);
+            --level-color: 220, 38, 38; --toast-bg: #DC2626; --toast-text: #FAFAFA;
+        }
+        body[data-theme="ocean-blue"] {
+            --bg: #0B1426; --card-bg: #111D35; --text: #E2E8F0; --text-secondary: #94A3B8;
+            --accent: #22D3EE; --accent-light: rgba(34, 211, 238, 0.1); --btn-bg: #162544;
+            --btn-hover-bg: #1E3A5F; --border: #1E3A5F; --toolbar-bg: rgba(11,20,38,0.85);
+            --level-color: 34, 211, 238; --toast-bg: #22D3EE; --toast-text: #0B1426;
+        }
+        body[data-theme="warm-light"] {
+            --bg: #FDF8E8; --card-bg: #FFFFFF; --text: #2D2418; --text-secondary: #5C4D3C;
+            --accent: #B4783C; --accent-light: rgba(180, 120, 60, 0.08); --btn-bg: #F5EDD6;
+            --btn-hover-bg: #EDE0C0; --border: #E5DCC3; --toolbar-bg: rgba(253,248,232,0.9);
+            --level-color: 180, 120, 60; --toast-bg: #B4783C; --toast-text: #FFF;
+        }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        html { height:auto; }
+        body {
+            min-height:100vh;
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+            background: var(--bg); color: var(--text);
+            display:flex; flex-direction:column;
+            transition: background 0.3s, color 0.3s;
+            -webkit-font-smoothing: antialiased;
+            user-select: none;
+            overflow-y:auto;
+        }
+        .app-header {
+            flex-shrink:0; height:52px; margin:12px 20px 0 20px; padding:0 4px;
+            display:flex; align-items:center; gap:12px; background: transparent; border:none;
+        }
+        .app-title { font-size:18px; font-weight:700; color:var(--text); }
+        .app-version { font-size:11px; color:var(--text-secondary); margin-left:6px; font-weight:400; }
+        .header-spacer { flex:1; }
+        .header-search { display:flex; align-items:center; gap:10px; }
+        .search-wrapper { position:relative; display:flex; align-items:center; width:200px; }
+        .search-icon { position:absolute; left:8px; width:16px; height:16px; pointer-events:none; color:var(--text-secondary); }
+        .search-icon svg { width:14px; height:14px; stroke:currentColor; fill:none; stroke-width:2; }
+        .search-input {
+            width:100%; height:30px; padding:0 30px 0 28px;
+            border:1.5px solid var(--border); border-radius:8px;
+            font-size:12px; background:var(--card-bg); color:var(--text);
+            outline:none; transition:all 0.2s;
+        }
+        .search-input:focus { border-color:var(--accent); }
+        .search-clear {
+            position:absolute; right:6px; width:20px; height:20px;
+            border-radius:50%; border:none; background:transparent;
+            cursor:pointer; display:none; align-items:center; justify-content:center;
+            color:var(--text-secondary); font-size:14px; transition:0.2s;
+        }
+        .search-clear:hover { background:var(--btn-bg); }
+        .search-clear.visible { display:flex; }
+        .theme-switcher { display:flex; gap:6px; }
+        .theme-dot {
+            width:20px; height:20px; border-radius:50%;
+            border:2px solid var(--border); cursor:pointer;
+            background:var(--card-bg); position:relative;
+        }
+        .theme-dot::after { content:''; position:absolute; top:3px; left:3px; width:10px; height:10px; border-radius:50%; }
+        .theme-dot[data-theme="dark-gold"]::after { background:#D4AF37; }
+        .theme-dot[data-theme="dark-crimson"]::after { background:#DC2626; }
+        .theme-dot[data-theme="ocean-blue"]::after { background:#22D3EE; }
+        .theme-dot[data-theme="warm-light"]::after { background:#B4783C; }
+        .theme-dot.active { border-color:var(--accent); box-shadow:0 0 0 2px var(--accent-light); }
+        .dual-toggle-btn {
+            width:30px; height:30px; border-radius:8px;
+            border:1.5px solid var(--border); background:var(--btn-bg);
+            color:var(--text); cursor:pointer; font-size:16px;
+            display:flex; align-items:center; justify-content:center;
+            transition:all 0.2s; margin-left:8px;
+        }
+        .dual-toggle-btn:hover { background:var(--btn-hover-bg); }
+        .dual-toggle-btn.active { background:var(--accent); color:#fff; border-color:var(--accent); }
+        .toolbar {
+            flex-shrink:0; margin:12px 20px 0 20px;
+            background: var(--toolbar-bg); border:1px solid var(--border);
+            border-radius:10px; padding:8px 12px; position:relative;
+            backdrop-filter: blur(6px);
+        }
+        .filter-area { display:flex; flex-wrap:wrap; gap:8px; }
+        .filter-btn {
+            flex-shrink:0; padding:6px 14px; border-radius:8px;
+            border:1.5px solid transparent; background:var(--btn-bg);
+            color:var(--text); cursor:pointer; font-size:13px;
+            font-weight:500; transition:all 0.2s; white-space:nowrap;
+            outline:none; cursor:grab; box-shadow: 0 1px 3px rgba(0,0,0,0.6);
+        }
+        .filter-btn:hover { background:var(--btn-hover-bg); border-color:var(--accent); }
+        .filter-btn.active { background:var(--accent); color:var(--bg); border-color:var(--accent); font-weight:600; }
+        .filter-btn.all-btn { background: var(--accent-light); border-color:var(--accent); font-weight:700; }
+        .filter-btn.dragging { opacity:0.4; }
+        .filter-btn .count-badge {
+            display:inline-block; background:rgba(255,255,255,0.15); color:inherit;
+            font-size:11px; border-radius:10px; padding:1px 6px; margin-left:4px;
+        }
+        .drag-hint {
+            display:none;
+            position:fixed;
+            background: var(--card-bg);
+            border:1px solid var(--border);
+            padding:4px 10px;
+            border-radius:4px;
+            font-size:11px;
+            color:var(--text-secondary);
+            white-space:nowrap;
+            z-index:200;
+            pointer-events:none;
+            box-shadow:var(--shadow-sm);
+        }
+        .display-panels-container {
+            flex:1 0 auto; display:flex; gap:1px; margin:16px 20px 20px 20px;
+            position:relative; overflow:hidden;
+        }
+        .display-panel {
+            display:flex; flex-direction:column;
+            border:1px solid var(--border); border-radius:12px;
+            background:var(--card-bg); box-shadow:var(--shadow-sm);
+            overflow:hidden; min-width:200px;
+        }
+        .display-panel.panel-active .panel-header {
+            color: var(--accent); background: var(--accent-light);
+        }
+        .panel-header {
+            flex-shrink:0; display:flex; justify-content:space-between; align-items:center;
+            padding:6px 12px; border-bottom:1px solid var(--border);
+            font-size:12px; font-weight:600;
+            color:var(--text-secondary); background:var(--toolbar-bg);
+            cursor:pointer;
+        }
+        .panel-controls { display:flex; align-items:center; gap:4px; }
+        .scale-group {
+            display:flex; align-items:center; gap:2px;
+            background:var(--btn-bg); border-radius:6px; padding:2px;
+        }
+        .scale-btn {
+            width:24px; height:24px; border:none; background:transparent;
+            color:var(--text); cursor:pointer; font-size:14px; font-weight:600;
+            display:flex; align-items:center; justify-content:center; border-radius:4px;
+        }
+        .scale-btn:hover { background:var(--btn-hover-bg); color:var(--accent); }
+        .scale-value { font-size:12px; font-weight:600; min-width:32px; text-align:center; }
+        .panel-body {
+            flex:1; overflow-x:auto; overflow-y:hidden;
+            padding:8px 12px 16px 12px;
+            display:flex; gap:10px; align-items:flex-start;
+            flex-wrap: wrap;
+            font-size:calc(13px * var(--panel-scale));
+        }
+        .panel-body::-webkit-scrollbar { height:4px; }
+        .panel-body::-webkit-scrollbar-track { background:transparent; }
+        .panel-body::-webkit-scrollbar-thumb { background:var(--border); border-radius:10px; }
+        .panel-body.drag-over { background:var(--accent-light); }
+        .panel-divider {
+            width:6px; background:transparent; cursor:col-resize;
+            flex-shrink:0; z-index:10; position:relative;
+        }
+        .panel-divider::after {
+            content:''; position:absolute; top:0; bottom:0; left:50%; transform:translateX(-50%);
+            width:1px; background:var(--divider-line);
+        }
+        .panel-divider:hover::after { background:var(--accent); }
+        .column {
+            flex-shrink:0;
+            width:calc(220px * var(--panel-scale,1));
+            max-height:520px;
+            background:var(--card-bg); border-radius:12px;
+            box-shadow:var(--shadow-sm);
+            display:flex; flex-direction:column;
+            overflow:hidden; animation:columnSlideIn 0.25s ease;
+            border:1px solid var(--border);
+            border-left-style:solid;
+            margin-bottom:10px;
+        }
+        @keyframes columnSlideIn { from{opacity:0;transform:translateX(-8px);} to{opacity:1;transform:translateX(0);} }
+        .column-header {
+            flex-shrink:0; padding:10px 16px; font-weight:600; font-size:calc(12px * var(--panel-scale,1));
+            color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.05em;
+            border-bottom:1px solid var(--border); background:var(--toolbar-bg);
+            white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+        }
+        .column-body { flex:1; overflow-y:auto; padding:4px 0; }
+        .column-body::-webkit-scrollbar { width:3px; }
+        .column-body::-webkit-scrollbar-track { background:transparent; }
+        .column-body::-webkit-scrollbar-thumb { background:var(--border); border-radius:10px; }
+        .item {
+            display:flex; align-items:center; gap:calc(8px * var(--panel-scale,1));
+            padding:calc(7px * var(--panel-scale,1)) calc(16px * var(--panel-scale,1));
+            cursor:pointer; transition:all 0.15s;
+            border-left:3px solid transparent;
+            font-size:calc(13px * var(--panel-scale,1));
+        }
+        .item:hover { background:var(--btn-bg); }
+        .item.folder-item { font-weight:500; }
+        .item.expanded { background:var(--accent-light); border-left-color:var(--accent); }
+        .item-icon { flex-shrink:0; }
+        .item-text { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; }
+        .item-arrow { flex-shrink:0; color:var(--text-secondary); transition:transform 0.2s; }
+        .item-count {
+            flex-shrink:0; font-size:calc(10px * var(--panel-scale,1));
+            background:var(--btn-bg); border-radius:8px; padding:calc(1px * var(--panel-scale,1)) calc(6px * var(--panel-scale,1));
+        }
+        .empty-state { flex:1; display:flex; align-items:center; justify-content:center; color:var(--text-secondary); }
+        .toast {
+            position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(80px);
+            background:var(--toast-bg); color:var(--toast-text);
+            padding:10px 24px; border-radius:20px; font-size:13px; font-weight:500; z-index:100;
+            opacity:0; transition:all 0.3s; pointer-events:none; white-space:nowrap;
+            box-shadow:0 8px 30px rgba(0,0,0,0.4);
+        }
+        .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+        mark { background:var(--accent-light); border-radius:2px; padding:0 2px; color:var(--text); }
+    </style>
+</head>
+<body data-theme="dark-gold">
+    <!-- 标题栏 -->
+    <header class="app-header">
+        <div class="app-title">Bookmark Workspace <span class="app-version">v2.2</span></div>
+        <div class="header-spacer"></div>
+        <div class="header-search">
+            <div class="search-wrapper">
+                <span class="search-icon">
+                    <svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><line x1="15.5" y1="15.5" x2="20.5" y2="20.5"/></svg>
+                </span>
+                <input type="text" class="search-input" id="searchInput" placeholder="搜索书签..." autocomplete="off"/>
+                <button class="search-clear" id="searchClear">×</button>
+            </div>
+            <div class="theme-switcher" id="themeSwitcher">
+                <button class="theme-dot active" data-theme="dark-gold" title="暗夜黑金"></button>
+                <button class="theme-dot" data-theme="dark-crimson" title="烈焰暗红"></button>
+                <button class="theme-dot" data-theme="ocean-blue" title="深海蓝夜"></button>
+                <button class="theme-dot" data-theme="warm-light" title="暖阳浅金"></button>
+            </div>
+            <button class="dual-toggle-btn" id="toggleDualBtn" title="切换双面板">⿰</button>
+        </div>
+    </header>
+
+    <!-- 工具栏 -->
+    <div class="toolbar" id="toolbar">
+        <div class="drag-hint">💡 拖拽按钮到展示区即可加载内容</div>
+        <div class="filter-area" id="filterArea"></div>
+    </div>
+
+    <!-- 展示区容器 -->
+    <div class="display-panels-container" id="panelsContainer">
+        <div class="display-panel panel-active" id="panel1" style="flex:2;">
+            <div class="panel-header">
+                <span id="panel1Title">📂 工作区 1</span>
+                <div class="panel-controls">
+                    <div class="scale-group" data-panel="panel1">
+                        <button class="scale-btn zoom-out">A-</button>
+                        <span class="scale-value">100%</span>
+                        <button class="scale-btn zoom-in">A+</button>
+                    </div>
+                </div>
+            </div>
+            <div class="panel-body" id="panelBody1" style="--panel-scale:1;"></div>
+        </div>
+        <div class="panel-divider" id="panelDivider"></div>
+        <div class="display-panel" id="panel2" style="flex:1; display:none;">
+            <div class="panel-header">
+                <span id="panel2Title">📂 工作区 2</span>
+                <div class="panel-controls">
+                    <div class="scale-group" data-panel="panel2">
+                        <button class="scale-btn zoom-out">A-</button>
+                        <span class="scale-value">100%</span>
+                        <button class="scale-btn zoom-in">A+</button>
+                    </div>
+                </div>
+            </div>
+            <div class="panel-body" id="panelBody2" style="--panel-scale:1;"></div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+    <script src="popup.js"></script>
+</body>
+</html>
